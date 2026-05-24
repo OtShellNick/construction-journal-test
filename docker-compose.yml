@@ -1,0 +1,95 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: construction-journal-mongo
+    restart: unless-stopped
+
+    environment:
+      MONGO_INITDB_DATABASE: construction_journal
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo_data:/data/db
+
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    networks:
+      - app_network
+
+  backend:
+    build:
+      context: ./backend
+
+    container_name: construction-journal-backend
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+
+      MONGODB_URI: mongodb://mongo:27017/construction_journal
+      FRONTEND_URL: http://localhost
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - app_network
+
+  seeder:
+    build:
+      context: ./backend
+
+    container_name: construction-journal-seeder
+    restart: "no"
+
+    command: node dist/seed
+
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/construction_journal
+
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+
+    container_name: construction-journal-frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_started
+
+    ports:
+      - "80:80"
+
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
