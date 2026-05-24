@@ -1,10 +1,15 @@
 import { z } from 'zod';
-import { workTypeSchema } from '@/entities/work-type/model/work-type.schema';
+
+const populatedWorkTypeSchema = z.object({
+  _id: z.string(),
+  name: z.string(),
+  unit: z.string(),
+});
 
 export const entrySchema = z.object({
   _id: z.string(),
   date: z.string(),
-  workTypeId: z.union([workTypeSchema, z.string()]),
+  workTypeId: z.union([populatedWorkTypeSchema, z.string()]),
   volume: z.number(),
   unit: z.string(),
   executor: z.string(),

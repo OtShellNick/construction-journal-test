@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus } from 'lucide-react';
 import { useGetEntriesQuery } from '@/entities/entry';
 import type { QueryEntryDto } from '@/entities/entry';
 import {
@@ -11,7 +11,10 @@ import {
   TableRow,
 } from '@/shared/ui/table';
 import { cn } from '@/shared/lib/utils';
+import { Button } from '@/shared/ui/button';
 import { EntriesFilters } from './EntriesFilters';
+import { AddEntryDialog } from './AddEntryDialog';
+import { DeleteEntryButton } from './DeleteEntryButton';
 
 type SortField = NonNullable<QueryEntryDto['sort']>;
 
@@ -34,6 +37,7 @@ function getWorkTypeName(workTypeId: unknown): string {
 
 export function EntriesTable() {
   const [params, setParams] = useState<QueryEntryDto>({});
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { data, isLoading, isError } = useGetEntriesQuery(params);
 
   function handleSortClick(field: SortField) {
@@ -49,7 +53,18 @@ export function EntriesTable() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex justify-end">
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Добавить запись
+        </Button>
+      </div>
+      
       <EntriesFilters params={params} onChange={setParams} />
+
+      
+
+      <AddEntryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
       <div className="rounded-lg border">
         <Table>
@@ -77,13 +92,14 @@ export function EntriesTable() {
                 </span>
               </TableHead>
               <TableHead>Примечания</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 </TableCell>
               </TableRow>
@@ -91,7 +107,7 @@ export function EntriesTable() {
 
             {isError && (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-destructive">
+                <TableCell colSpan={7} className="h-32 text-center text-destructive">
                   Не удалось загрузить данные. Проверьте подключение к серверу.
                 </TableCell>
               </TableRow>
@@ -99,7 +115,7 @@ export function EntriesTable() {
 
             {!isLoading && !isError && data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                   Записи не найдены
                 </TableCell>
               </TableRow>
@@ -118,6 +134,9 @@ export function EntriesTable() {
                   <TableCell>{entry.executor}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {entry.notes ?? '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DeleteEntryButton entryId={entry._id} />
                   </TableCell>
                 </TableRow>
               ))}
