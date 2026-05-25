@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Pencil, Plus } from 'lucide-react';
 import { useGetEntriesQuery } from '@/entities/entry';
-import type { QueryEntryDto } from '@/entities/entry';
+import type { Entry, QueryEntryDto } from '@/entities/entry';
 import {
   Table,
   TableBody,
@@ -14,6 +14,7 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { EntriesFilters } from './EntriesFilters';
 import { AddEntryDialog } from './AddEntryDialog';
+import { EditEntryDialog } from './EditEntryDialog';
 import { DeleteEntryButton } from './DeleteEntryButton';
 
 type SortField = NonNullable<QueryEntryDto['sort']>;
@@ -38,6 +39,7 @@ function getWorkTypeName(workTypeId: unknown): string {
 export function EntriesTable() {
   const [params, setParams] = useState<QueryEntryDto>({});
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const { data, isLoading, isError } = useGetEntriesQuery(params);
 
   function handleSortClick(field: SortField) {
@@ -66,6 +68,14 @@ export function EntriesTable() {
 
       <AddEntryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
+      {editingEntry && (
+        <EditEntryDialog
+          open={!!editingEntry}
+          onOpenChange={(o) => { if (!o) setEditingEntry(null); }}
+          entry={editingEntry}
+        />
+      )}
+
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -92,7 +102,7 @@ export function EntriesTable() {
                 </span>
               </TableHead>
               <TableHead>Примечания</TableHead>
-              <TableHead className="w-10" />
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
 
@@ -136,7 +146,16 @@ export function EntriesTable() {
                     {entry.notes ?? '—'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DeleteEntryButton entryId={entry._id} />
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingEntry(entry)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DeleteEntryButton entryId={entry._id} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
