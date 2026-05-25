@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { QueryFilter, Model, SortOrder, Types } from 'mongoose';
 
@@ -77,13 +81,23 @@ export class EntriesService {
     const filter: QueryFilter<Entry> = {};
 
     if (query.from || query.to) {
+      const from = query.from ? new Date(query.from) : undefined;
+      const to = query.to ? new Date(query.to) : undefined;
+
+      if (from && isNaN(from.getTime())) {
+        throw new BadRequestException(
+          `Неверный формат даты "from": "${query.from}"`,
+        );
+      }
+      if (to && isNaN(to.getTime())) {
+        throw new BadRequestException(
+          `Неверный формат даты "to": "${query.to}"`,
+        );
+      }
+
       filter.date = {
-        ...(query.from && {
-          $gte: new Date(query.from),
-        }),
-        ...(query.to && {
-          $lte: new Date(query.to),
-        }),
+        ...(from && { $gte: from }),
+        ...(to && { $lte: to }),
       };
     }
 

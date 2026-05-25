@@ -9,7 +9,7 @@ const populatedWorkTypeSchema = z.object({
 export const entrySchema = z.object({
   _id: z.string(),
   date: z.string(),
-  workTypeId: z.union([populatedWorkTypeSchema, z.string()]),
+  workTypeId: populatedWorkTypeSchema,
   volume: z.number(),
   unit: z.string(),
   executor: z.string(),

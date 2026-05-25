@@ -6,19 +6,22 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Post,
   Put,
   Query,
 } from '@nestjs/common';
 
 import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { EntriesService } from './entries.service';
 
 import { CreateEntryDto } from './dto/create-entry.dto';
@@ -44,47 +47,40 @@ export class EntriesController {
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Получить запись по ID',
-  })
-  @ApiOkResponse({
-    description: 'Запись успешно получена',
-  })
-  findOne(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Получить запись по ID' })
+  @ApiOkResponse({ description: 'Запись успешно получена' })
+  @ApiNotFoundResponse({ description: 'Запись не найдена' })
+  findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.entriesService.findOne(id);
   }
 
   @Post()
-  @ApiOperation({
-    summary: 'Создать запись',
-  })
-  @ApiOkResponse({
-    description: 'Запись успешно создана',
-  })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Создать запись' })
+  @ApiCreatedResponse({ description: 'Запись успешно создана' })
+  @ApiBadRequestResponse({ description: 'Неверные данные' })
   create(@Body() dto: CreateEntryDto) {
     return this.entriesService.create(dto);
   }
 
   @Put(':id')
-  @ApiOperation({
-    summary: 'Обновить запись',
-  })
-  @ApiOkResponse({
-    description: 'Запись успешно обновлена',
-  })
-  update(@Param('id') id: string, @Body() dto: CreateEntryDto) {
+  @ApiOperation({ summary: 'Обновить запись' })
+  @ApiOkResponse({ description: 'Запись успешно обновлена' })
+  @ApiNotFoundResponse({ description: 'Запись не найдена' })
+  @ApiBadRequestResponse({ description: 'Неверные данные' })
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: CreateEntryDto,
+  ) {
     return this.entriesService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Удалить запись',
-  })
-  @ApiNoContentResponse({
-    description: 'Запись успешно удалена',
-  })
-  remove(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Удалить запись' })
+  @ApiNoContentResponse({ description: 'Запись успешно удалена' })
+  @ApiNotFoundResponse({ description: 'Запись не найдена' })
+  remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.entriesService.remove(id);
   }
 }

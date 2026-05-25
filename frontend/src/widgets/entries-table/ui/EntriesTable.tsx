@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Pencil, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus } from 'lucide-react';
 import { useGetEntriesQuery } from '@/entities/entry';
 import type { Entry, QueryEntryDto } from '@/entities/entry';
 import {
@@ -13,9 +13,8 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { EntriesFilters } from './EntriesFilters';
-import { AddEntryDialog } from './AddEntryDialog';
-import { EditEntryDialog } from './EditEntryDialog';
-import { DeleteEntryButton } from './DeleteEntryButton';
+import { EntryFormDialog } from './EntryFormDialog';
+import { EntryTableRow } from './EntryTableRow';
 
 type SortField = NonNullable<QueryEntryDto['sort']>;
 
@@ -25,20 +24,35 @@ function SortIcon({ field, params }: { field: SortField; params: QueryEntryDto }
   return <ArrowDown className="ml-1 h-3.5 w-3.5" />;
 }
 
-function formatDate(isoString: string) {
-  return new Date(isoString).toLocaleDateString('ru-RU');
-}
-
-function getWorkTypeName(workTypeId: unknown): string {
-  if (typeof workTypeId === 'object' && workTypeId !== null && 'name' in workTypeId) {
-    return String((workTypeId as { name: unknown }).name);
-  }
-  return '—';
+function SortableTableHead({
+  field,
+  label,
+  params,
+  onSort,
+  className,
+}: {
+  field: SortField;
+  label: string;
+  params: QueryEntryDto;
+  onSort: (f: SortField) => void;
+  className?: string;
+}) {
+  return (
+    <TableHead
+      className={cn('cursor-pointer select-none hover:text-foreground transition-colors', className)}
+      onClick={() => onSort(field)}
+    >
+      <span className="inline-flex items-center">
+        {label}
+        <SortIcon field={field} params={params} />
+      </span>
+    </TableHead>
+  );
 }
 
 export function EntriesTable() {
   const [params, setParams] = useState<QueryEntryDto>({});
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const { data, isLoading, isError } = useGetEntriesQuery(params);
 
@@ -50,29 +64,25 @@ export function EntriesTable() {
     }
   }
 
-  const sortableHeadClass =
-    'cursor-pointer select-none hover:text-foreground transition-colors';
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={() => setAddOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Добавить запись
         </Button>
       </div>
-      
+
       <EntriesFilters params={params} onChange={setParams} />
 
-      
-
-      <AddEntryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <EntryFormDialog mode="add" open={addOpen} onOpenChange={setAddOpen} />
 
       {editingEntry && (
-        <EditEntryDialog
+        <EntryFormDialog
+          mode="edit"
+          entry={editingEntry}
           open={!!editingEntry}
           onOpenChange={(o) => { if (!o) setEditingEntry(null); }}
-          entry={editingEntry}
         />
       )}
 
@@ -80,27 +90,11 @@ export function EntriesTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead
-                className={cn(sortableHeadClass, 'w-32')}
-                onClick={() => handleSortClick('date')}
-              >
-                <span className="inline-flex items-center">
-                  Дата
-                  <SortIcon field="date" params={params} />
-                </span>
-              </TableHead>
+              <SortableTableHead field="date" label="Дата" params={params} onSort={handleSortClick} className="w-32" />
               <TableHead>Вид работ</TableHead>
               <TableHead className="w-24 text-right">Объём</TableHead>
               <TableHead className="w-24">Ед. изм.</TableHead>
-              <TableHead
-                className={cn(sortableHeadClass)}
-                onClick={() => handleSortClick('executor')}
-              >
-                <span className="inline-flex items-center">
-                  Исполнитель
-                  <SortIcon field="executor" params={params} />
-                </span>
-              </TableHead>
+              <SortableTableHead field="executor" label="Исполнитель" params={params} onSort={handleSortClick} />
               <TableHead>Примечания</TableHead>
               <TableHead className="w-20" />
             </TableRow>
@@ -131,34 +125,9 @@ export function EntriesTable() {
               </TableRow>
             )}
 
-            {!isLoading &&
-              !isError &&
-              data?.map((entry) => (
-                <TableRow key={entry._id}>
-                  <TableCell className="font-medium tabular-nums">
-                    {formatDate(entry.date)}
-                  </TableCell>
-                  <TableCell>{getWorkTypeName(entry.workTypeId)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{entry.volume}</TableCell>
-                  <TableCell>{entry.unit}</TableCell>
-                  <TableCell>{entry.executor}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {entry.notes ?? '—'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingEntry(entry)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteEntryButton entryId={entry._id} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+            {!isLoading && !isError && data?.map((entry) => (
+              <EntryTableRow key={entry._id} entry={entry} onEdit={setEditingEntry} />
+            ))}
           </TableBody>
         </Table>
       </div>

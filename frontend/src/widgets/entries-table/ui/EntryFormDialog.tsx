@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { useCreateEntryMutation } from '@/entities/entry';
+import {
+  useCreateEntryMutation,
+  useUpdateEntryMutation,
+  entryFormSchema,
+} from '@/entities/entry';
+import type { Entry, EntryFormValues } from '@/entities/entry';
 import { useGetWorkTypesQuery } from '@/entities/work-type';
 import {
   Dialog,
@@ -16,7 +20,6 @@ import {
 } from '@/shared/ui/dialog';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
 import {
   Select,
@@ -26,50 +29,62 @@ import {
   SelectValue,
 } from '@/shared/ui/select';
 import { DatePicker } from '@/shared/ui/date-picker';
+import { FormField } from '@/shared/ui/form-field';
 
-const formSchema = z.object({
-  date: z.string().min(1, 'Укажите дату'),
-  workTypeId: z.string().min(1, 'Выберите вид работ'),
-  volume: z
-    .number({ error: 'Укажите объём' })
-    .min(0.01, 'Объём должен быть больше 0'),
-  unit: z.string().min(1, 'Ед. измерения обязательна').max(20),
-  executor: z.string().min(2, 'Минимум 2 символа').max(200, 'Максимум 200 символов'),
-  notes: z.string().max(500, 'Максимум 500 символов').optional(),
-});
+type Mode = 'add' | 'edit';
 
-type FormValues = z.infer<typeof formSchema>;
-
-interface AddEntryDialogProps {
+interface EntryFormDialogProps {
+  mode: Mode;
+  entry?: Entry;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
+const TITLES: Record<Mode, { title: string; description: string }> = {
+  add: { title: 'Добавить запись', description: 'Заполните поля и нажмите «Сохранить»' },
+  edit: { title: 'Редактировать запись', description: 'Измените поля и нажмите «Сохранить»' },
+};
+
+function getDefaultValues(mode: Mode, entry?: Entry): EntryFormValues {
+  if (mode === 'edit' && entry) {
+    return {
+      date: entry.date.slice(0, 10),
+      workTypeId: entry.workTypeId._id,
+      volume: entry.volume,
+      unit: entry.unit,
+      executor: entry.executor,
+      notes: entry.notes ?? '',
+    };
+  }
+  return { date: '', workTypeId: '', volume: 0.01, unit: '', executor: '', notes: '' };
+}
+
+export function EntryFormDialog({ mode, entry, open, onOpenChange }: EntryFormDialogProps) {
   const { data: workTypes } = useGetWorkTypesQuery();
-  const [createEntry, { isLoading }] = useCreateEntryMutation();
+  const [createEntry, { isLoading: isCreating }] = useCreateEntryMutation();
+  const [updateEntry, { isLoading: isUpdating }] = useUpdateEntryMutation();
+  const isLoading = isCreating || isUpdating;
 
   const {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     reset,
     formState: { errors, isValid },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  } = useForm<EntryFormValues>({
+    resolver: zodResolver(entryFormSchema),
     mode: 'onChange',
-    defaultValues: {
-      date: '',
-      workTypeId: '',
-      unit: '',
-      executor: '',
-      notes: '',
-    },
+    defaultValues: getDefaultValues(mode, entry),
   });
 
-  const selectedWorkTypeId = watch('workTypeId');
+  useEffect(() => {
+    if (mode === 'edit' && entry) {
+      reset(getDefaultValues('edit', entry));
+    }
+  }, [entry, mode, reset]);
+
+  const selectedWorkTypeId = useWatch({ name: 'workTypeId', control });
 
   useEffect(() => {
     const wt = workTypes?.find((w) => w._id === selectedWorkTypeId);
@@ -78,20 +93,27 @@ export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
 
   function handleClose() {
     if (isLoading) return;
-    reset();
+    if (mode === 'add') reset(getDefaultValues('add'));
     onOpenChange(false);
   }
 
-  async function onSubmit(data: FormValues) {
+  async function onSubmit(data: EntryFormValues) {
     try {
-      await createEntry(data).unwrap();
-      toast.success('Запись добавлена');
-      reset();
+      if (mode === 'add') {
+        await createEntry(data).unwrap();
+        toast.success('Запись добавлена');
+        reset(getDefaultValues('add'));
+      } else if (entry) {
+        await updateEntry({ id: entry._id, body: data }).unwrap();
+        toast.success('Запись обновлена');
+      }
       onOpenChange(false);
     } catch {
-      toast.error('Не удалось сохранить запись');
+      toast.error(mode === 'add' ? 'Не удалось сохранить запись' : 'Не удалось обновить запись');
     }
   }
+
+  const { title, description } = TITLES[mode];
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
@@ -102,13 +124,12 @@ export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
         className="sm:max-w-md"
       >
         <DialogHeader>
-          <DialogTitle>Добавить запись</DialogTitle>
-          <DialogDescription>Заполните поля и нажмите «Сохранить»</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label>Дата</Label>
+          <FormField label="Дата" error={errors.date?.message}>
             <Controller
               name="date"
               control={control}
@@ -119,13 +140,9 @@ export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
                 />
               )}
             />
-            {errors.date && (
-              <p className="text-xs text-destructive">{errors.date.message}</p>
-            )}
-          </div>
+          </FormField>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Вид работ</Label>
+          <FormField label="Вид работ" error={errors.workTypeId?.message}>
             <Controller
               name="workTypeId"
               control={control}
@@ -144,14 +161,10 @@ export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
                 </Select>
               )}
             />
-            {errors.workTypeId && (
-              <p className="text-xs text-destructive">{errors.workTypeId.message}</p>
-            )}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label>Объём</Label>
+            <FormField label="Объём" error={errors.volume?.message}>
               <Input
                 type="number"
                 step="0.01"
@@ -159,46 +172,28 @@ export function AddEntryDialog({ open, onOpenChange }: AddEntryDialogProps) {
                 placeholder="0.00"
                 {...register('volume', { valueAsNumber: true })}
               />
-              {errors.volume && (
-                <p className="text-xs text-destructive">{errors.volume.message}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Ед. изм.</Label>
+            </FormField>
+            <FormField label="Ед. изм." error={errors.unit?.message}>
               <Input
                 readOnly
                 placeholder="—"
                 className="bg-muted text-muted-foreground cursor-default"
                 {...register('unit')}
               />
-              {errors.unit && (
-                <p className="text-xs text-destructive">{errors.unit.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Исполнитель</Label>
+          <FormField label="Исполнитель" error={errors.executor?.message}>
             <Input placeholder="Иванов Иван Иванович" {...register('executor')} />
-            {errors.executor && (
-              <p className="text-xs text-destructive">{errors.executor.message}</p>
-            )}
-          </div>
+          </FormField>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>
-              Примечания{' '}
-              <span className="text-muted-foreground font-normal">(необязательно)</span>
-            </Label>
+          <FormField label="Примечания" optional error={errors.notes?.message}>
             <Textarea
               placeholder="Дополнительная информация..."
               rows={3}
               {...register('notes')}
             />
-            {errors.notes && (
-              <p className="text-xs text-destructive">{errors.notes.message}</p>
-            )}
-          </div>
+          </FormField>
 
           <DialogFooter>
             <Button
