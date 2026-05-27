@@ -2,6 +2,9 @@ import { baseApi } from '@/shared/api';
 import { workTypeListSchema } from '../model/work-type.schema';
 import type { WorkType } from '../model/work-type.schema';
 
+/**
+ * RTK Query API-слайс для работы с видами работ.
+ */
 export const workTypeApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWorkTypes: builder.query<WorkType[], void>({
@@ -13,4 +16,5 @@ export const workTypeApi = baseApi.injectEndpoints({
   overrideExisting: false,
 });
 
+/** Хук для получения списка видов работ. */
 export const { useGetWorkTypesQuery } = workTypeApi;

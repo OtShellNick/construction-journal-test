@@ -31,8 +31,10 @@ import {
 import { DatePicker } from '@/shared/ui/date-picker';
 import { FormField } from '@/shared/ui/form-field';
 
+/** Режим диалога: добавление или редактирование записи. */
 type Mode = 'add' | 'edit';
 
+/** Пропсы диалога формы записи. */
 interface EntryFormDialogProps {
   mode: Mode;
   entry?: Entry;
@@ -59,6 +61,10 @@ function getDefaultValues(mode: Mode, entry?: Entry): EntryFormValues {
   return { date: '', workTypeId: '', volume: 0.01, unit: '', executor: '', notes: '' };
 }
 
+/**
+ * Диалог для создания и редактирования записи журнала.
+ * @param props - Пропсы диалога
+ */
 export function EntryFormDialog({ mode, entry, open, onOpenChange }: EntryFormDialogProps) {
   const { data: workTypes } = useGetWorkTypesQuery();
   const [createEntry, { isLoading: isCreating }] = useCreateEntryMutation();

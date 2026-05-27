@@ -27,6 +27,10 @@ import { EntriesService } from './entries.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { QueryEntryDto } from './dto/query-entry.dto';
 
+/**
+ * Контроллер для управления записями журнала работ.
+ * Предоставляет CRUD-эндпоинты по пути /entries.
+ */
 @ApiTags('entries')
 @Controller({
   path: 'entries',
@@ -35,6 +39,7 @@ import { QueryEntryDto } from './dto/query-entry.dto';
 export class EntriesController {
   constructor(private readonly entriesService: EntriesService) {}
 
+  /** Получить список записей с фильтрацией и сортировкой. */
   @Get()
   @ApiOperation({
     summary: 'Получить список записей с фильтрацией и сортировкой',
@@ -46,6 +51,7 @@ export class EntriesController {
     return this.entriesService.findAll(query);
   }
 
+  /** Получить одну запись по идентификатору. */
   @Get(':id')
   @ApiOperation({ summary: 'Получить запись по ID' })
   @ApiOkResponse({ description: 'Запись успешно получена' })
@@ -54,6 +60,7 @@ export class EntriesController {
     return this.entriesService.findOne(id);
   }
 
+  /** Создать новую запись журнала. */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Создать запись' })
@@ -63,6 +70,7 @@ export class EntriesController {
     return this.entriesService.create(dto);
   }
 
+  /** Обновить существующую запись по идентификатору. */
   @Put(':id')
   @ApiOperation({ summary: 'Обновить запись' })
   @ApiOkResponse({ description: 'Запись успешно обновлена' })
@@ -75,6 +83,7 @@ export class EntriesController {
     return this.entriesService.update(id, dto);
   }
 
+  /** Удалить запись по идентификатору. */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Удалить запись' })

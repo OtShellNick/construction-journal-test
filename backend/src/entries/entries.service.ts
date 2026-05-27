@@ -10,6 +10,10 @@ import { Entry, EntryDocument } from './entry.schema';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { QueryEntryDto } from './dto/query-entry.dto';
 
+/**
+ * Сервис для работы с записями журнала работ.
+ * Содержит бизнес-логику CRUD-операций и построения фильтров.
+ */
 @Injectable()
 export class EntriesService {
   private readonly workTypePopulate = {
@@ -22,6 +26,10 @@ export class EntriesService {
     private readonly entryModel: Model<EntryDocument>,
   ) {}
 
+  /**
+   * Возвращает список записей с применением фильтров и сортировки.
+   * @param query - Параметры фильтрации и сортировки
+   */
   async findAll(query: QueryEntryDto) {
     const filter = this.buildFilter(query);
     const sort = this.buildSort(query);
@@ -34,6 +42,11 @@ export class EntriesService {
       .exec();
   }
 
+  /**
+   * Возвращает одну запись по идентификатору.
+   * @param id - Строковый MongoDB ObjectId
+   * @throws NotFoundException если запись не найдена
+   */
   async findOne(id: string) {
     const entry = await this.entryModel
       .findById(id)
@@ -46,6 +59,10 @@ export class EntriesService {
     return entry;
   }
 
+  /**
+   * Создаёт новую запись журнала.
+   * @param dto - Данные для создания записи
+   */
   async create(dto: CreateEntryDto) {
     const preparedData = this.prepareEntryData(dto);
 
@@ -54,6 +71,12 @@ export class EntriesService {
     return created.populate(this.workTypePopulate);
   }
 
+  /**
+   * Обновляет запись журнала по идентификатору.
+   * @param id - Строковый MongoDB ObjectId
+   * @param dto - Новые данные записи
+   * @throws NotFoundException если запись не найдена
+   */
   async update(id: string, dto: CreateEntryDto) {
     const preparedData = this.prepareEntryData(dto);
 
@@ -71,12 +94,18 @@ export class EntriesService {
     return updated;
   }
 
+  /**
+   * Удаляет запись журнала по идентификатору.
+   * @param id - Строковый MongoDB ObjectId
+   * @throws NotFoundException если запись не найдена
+   */
   async remove(id: string): Promise<void> {
     const deleted = await this.entryModel.findByIdAndDelete(id).exec();
 
     this.ensureExists(deleted, id);
   }
 
+  /** Строит MongoDB-фильтр из параметров запроса. */
   private buildFilter(query: QueryEntryDto): QueryFilter<Entry> {
     const filter: QueryFilter<Entry> = {};
 
@@ -104,12 +133,14 @@ export class EntriesService {
     return filter;
   }
 
+  /** Строит объект сортировки из параметров запроса. */
   private buildSort(query: QueryEntryDto): Record<string, SortOrder> {
     return {
       [query.sort || 'date']: query.order === 'asc' ? 1 : -1,
     };
   }
 
+  /** Подготавливает данные DTO к записи в БД (преобразует типы). */
   private prepareEntryData(dto: CreateEntryDto) {
     return {
       ...dto,
@@ -118,6 +149,11 @@ export class EntriesService {
     };
   }
 
+  /**
+   * Выбрасывает NotFoundException если сущность не найдена.
+   * @param entity - Проверяемая сущность
+   * @param id - Идентификатор для сообщения об ошибке
+   */
   private ensureExists(entity: unknown, id: string): asserts entity {
     if (!entity) {
       throw new NotFoundException(`Запись ${id} не найдена`);

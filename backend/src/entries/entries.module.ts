@@ -4,6 +4,7 @@ import { Entry, EntrySchema } from './entry.schema';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 
+/** Модуль записей журнала работ: регистрирует схему, контроллер и сервис. */
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Entry.name, schema: EntrySchema }]),

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/shared/lib/utils'
 import { Label } from './label'
 
+/** Пропсы компонента поля формы. */
 interface FormFieldProps {
   label: string
   error?: string
@@ -9,9 +11,13 @@ interface FormFieldProps {
   className?: string
 }
 
+/**
+ * Обёртка для поля формы: метка, содержимое, сообщение об ошибке.
+ * @param props - Пропсы поля формы
+ */
 export function FormField({ label, error, optional, children, className }: FormFieldProps) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className ?? ''}`}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <Label>
         {label}
         {optional && (

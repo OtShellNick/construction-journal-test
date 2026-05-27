@@ -3,9 +3,13 @@ import '@/entities/work-type/api/work-type-api';
 
 import { Component, StrictMode } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { logError } from '@/shared/lib/logger';
 import { StoreProvider } from './providers/store-provider';
 import App from '../App';
 
+/**
+ * Граничный компонент для перехвата ошибок рендеринга React.
+ */
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean }
@@ -17,7 +21,7 @@ class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Uncaught error:', error, info);
+    logError('Uncaught error:', error, info);
   }
 
   render() {
@@ -32,6 +36,9 @@ class ErrorBoundary extends Component<
   }
 }
 
+/**
+ * Корневой компонент приложения: инициализирует провайдеры и обработчик ошибок.
+ */
 export function AppRoot() {
   return (
     <StrictMode>

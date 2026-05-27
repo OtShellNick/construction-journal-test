@@ -10,11 +10,16 @@ import {
 } from '@/shared/ui/select';
 import type { QueryEntryDto } from '@/entities/entry';
 
+/** Пропсы панели фильтров таблицы записей. */
 interface EntriesFiltersProps {
   params: QueryEntryDto;
   onChange: (params: QueryEntryDto) => void;
 }
 
+/**
+ * Панель фильтрации и сортировки таблицы записей журнала.
+ * @param props - Пропсы панели фильтров
+ */
 export function EntriesFilters({ params, onChange }: EntriesFiltersProps) {
   const hasFilters = params.from || params.to || params.sort || params.order;
 

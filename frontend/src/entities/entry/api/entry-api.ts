@@ -2,6 +2,9 @@ import { baseApi } from '@/shared/api';
 import { entrySchema, entryListSchema } from '../model/entry.schema';
 import type { Entry, CreateEntryDto, QueryEntryDto } from '../model/entry.schema';
 
+/**
+ * RTK Query API-слайс для работы с записями журнала.
+ */
 export const entryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getEntries: builder.query<Entry[], QueryEntryDto | void>({
@@ -17,12 +20,6 @@ export const entryApi = baseApi.injectEndpoints({
               { type: 'ENTRIES' as const, id: 'LIST' },
             ]
           : [{ type: 'ENTRIES' as const, id: 'LIST' }],
-    }),
-
-    getEntry: builder.query<Entry, string>({
-      query: (id) => `entries/${id}`,
-      transformResponse: (res: unknown) => entrySchema.parse(res),
-      providesTags: (_result, _error, id) => [{ type: 'ENTRIES', id }],
     }),
 
     createEntry: builder.mutation<Entry, CreateEntryDto>({
@@ -63,9 +60,12 @@ export const entryApi = baseApi.injectEndpoints({
 });
 
 export const {
+  /** Хук для получения списка записей с фильтрацией. */
   useGetEntriesQuery,
-  useGetEntryQuery,
+  /** Хук для создания записи. */
   useCreateEntryMutation,
+  /** Хук для обновления записи. */
   useUpdateEntryMutation,
+  /** Хук для удаления записи. */
   useDeleteEntryMutation,
 } = entryApi;

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -31,6 +32,6 @@ async function seed() {
 }
 
 seed().catch((e) => {
-  console.error(e);
+  new Logger('Seed').error(e);
   process.exit(1);
 });

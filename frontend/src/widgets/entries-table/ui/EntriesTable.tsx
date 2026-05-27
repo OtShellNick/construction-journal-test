@@ -18,12 +18,14 @@ import { EntryTableRow } from './EntryTableRow';
 
 type SortField = NonNullable<QueryEntryDto['sort']>;
 
+/** Иконка сортировки для заголовка таблицы. */
 function SortIcon({ field, params }: { field: SortField; params: QueryEntryDto }) {
   if (params.sort !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-50" />;
   if (params.order === 'asc') return <ArrowUp className="ml-1 h-3.5 w-3.5" />;
   return <ArrowDown className="ml-1 h-3.5 w-3.5" />;
 }
 
+/** Кликабельный заголовок таблицы с поддержкой сортировки. */
 function SortableTableHead({
   field,
   label,
@@ -50,6 +52,7 @@ function SortableTableHead({
   );
 }
 
+/** Основной виджет таблицы записей журнала с фильтрацией и сортировкой. */
 export function EntriesTable() {
   const [params, setParams] = useState<QueryEntryDto>({});
   const [addOpen, setAddOpen] = useState(false);

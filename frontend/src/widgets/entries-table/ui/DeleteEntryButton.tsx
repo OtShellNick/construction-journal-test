@@ -14,10 +14,15 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 
+/** Пропсы кнопки удаления записи. */
 interface DeleteEntryButtonProps {
   entryId: string;
 }
 
+/**
+ * Кнопка удаления записи с диалогом подтверждения.
+ * @param props - Пропсы кнопки
+ */
 export function DeleteEntryButton({ entryId }: DeleteEntryButtonProps) {
   const [deleteEntry, { isLoading }] = useDeleteEntryMutation();
 

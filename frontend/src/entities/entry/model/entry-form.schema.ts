@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+/** Zod-схема формы создания/редактирования записи. */
 export const entryFormSchema = z.object({
   date: z.string().min(1, 'Укажите дату'),
   workTypeId: z.string().min(1, 'Выберите вид работ'),
@@ -11,4 +12,5 @@ export const entryFormSchema = z.object({
   notes: z.string().max(500, 'Максимум 500 символов').optional(),
 });
 
+/** Тип значений формы создания/редактирования записи. */
 export type EntryFormValues = z.infer<typeof entryFormSchema>;

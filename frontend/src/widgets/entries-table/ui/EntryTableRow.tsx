@@ -8,11 +8,16 @@ function formatDate(isoString: string) {
   return new Date(isoString).toLocaleDateString('ru-RU');
 }
 
+/** Пропсы строки таблицы записи журнала. */
 interface EntryTableRowProps {
   entry: Entry;
   onEdit: (entry: Entry) => void;
 }
 
+/**
+ * Строка таблицы с данными одной записи журнала.
+ * @param props - Пропсы строки
+ */
 export function EntryTableRow({ entry, onEdit }: EntryTableRowProps) {
   return (
     <TableRow>

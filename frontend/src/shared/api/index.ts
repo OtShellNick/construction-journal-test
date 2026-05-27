@@ -2,9 +2,11 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: '/api/',
-  prepareHeaders: (headers) => headers,
 });
 
+/**
+ * Базовый RTK Query API-экземпляр для всех эндпоинтов приложения.
+ */
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery,
